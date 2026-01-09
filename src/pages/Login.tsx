@@ -88,19 +88,21 @@ export const Login = () => {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-slate-200">
+          <div className="mt-6 pt-6 border-t border-slate-200 space-y-3">
             <p className="text-center text-slate-600 text-sm">
               Don't have an account?{' '}
               <Link to="/register" className="font-semibold text-emerald-600 hover:text-emerald-700">
                 Sign up here
               </Link>
             </p>
+            <p className="text-center text-slate-600 text-sm">
+              First time setup?{' '}
+              <Link to="/setup" className="font-semibold text-teal-600 hover:text-teal-700">
+                Create test admin
+              </Link>
+            </p>
           </div>
         </div>
-
-        <p className="text-center text-slate-600 text-xs mt-6">
-          Demo credentials: admin@clinic.com / password
-        </p>
       </div>
     </div>
   );

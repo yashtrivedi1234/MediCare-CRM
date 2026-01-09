@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { Setup } from './pages/Setup';
 import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
 import { Appointments } from './pages/Appointments';
@@ -21,6 +22,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -186,7 +188,7 @@ function App() {
             }
           />
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/setup" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
