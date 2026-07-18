@@ -20,38 +20,43 @@ function isoDate(offsetDays = 0) {
 
 async function ensureAuthUser(account: (typeof DEMO_ACCOUNTS)[number]) {
   const email = account.email.toLowerCase();
+  const confirmHint =
+    'Turn OFF “Confirm email” in Supabase → Authentication → Providers → Email, then retry.';
 
   // Prefer sign-in (already exists). Fall back to sign-up.
   let userId: string | undefined;
   const signIn = await supabase.auth.signInWithPassword({ email, password: DEMO_PASSWORD });
-  if (signIn.data.user) {
-    userId = signIn.data.user.id;
+  if (signIn.data.session?.user) {
+    userId = signIn.data.session.user.id;
   } else {
     const signUp = await supabase.auth.signUp({
       email,
       password: DEMO_PASSWORD,
       options: { data: { full_name: account.full_name, role: account.role } },
     });
+
     if (signUp.error) {
-      // Race / already registered — try sign-in again
       const retry = await supabase.auth.signInWithPassword({ email, password: DEMO_PASSWORD });
-      if (retry.error || !retry.data.user) {
-        throw new Error(
-          `Could not create/login ${email}: ${signUp.error.message}. If email confirmation is ON in Supabase, turn it OFF for demo (Auth → Providers → Email).`
-        );
+      if (retry.error || !retry.data.session?.user) {
+        throw new Error(`Could not create/login ${email}: ${signUp.error.message}. ${confirmHint}`);
       }
-      userId = retry.data.user.id;
-    } else if (signUp.data.user) {
-      userId = signUp.data.user.id;
-      // Confirm may leave session null — sign in when possible
-      if (!signUp.data.session) {
-        const retry = await supabase.auth.signInWithPassword({ email, password: DEMO_PASSWORD });
-        if (retry.data.user) userId = retry.data.user.id;
-      }
+      userId = retry.data.session.user.id;
+    } else if (signUp.data.session?.user) {
+      userId = signUp.data.session.user.id;
+    } else if (signUp.data.user && !signUp.data.session) {
+      // Account created but not confirmed — cannot write public.users under RLS
+      throw new Error(
+        `Signed up ${email} but no session was returned. ${confirmHint}`
+      );
     }
   }
 
-  if (!userId) throw new Error(`No user id for ${email}`);
+  if (!userId) throw new Error(`No user id for ${email}. ${confirmHint}`);
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    throw new Error(`Not authenticated while creating profile for ${email}. ${confirmHint}`);
+  }
 
   const { error } = await supabase.from('users').upsert({
     id: userId,
@@ -344,19 +349,12 @@ export async function runDemoSeed(): Promise<DemoSeedResult> {
     throw new Error('Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY');
   }
 
+  // Browser-only seed (no edge function — avoids CORS when seed-users isn't deployed).
   const ids: Record<string, string> = {};
-
-  // Edge function (service role) if deployed; otherwise browser sign-up/sign-in.
-  const invoke = await supabase.functions.invoke('seed-users');
-  if (!invoke.error && invoke.data?.ids && !invoke.data.error) {
-    Object.assign(ids, invoke.data.ids);
-  } else {
-    for (const account of DEMO_ACCOUNTS) {
-      ids[account.email] = await ensureAuthUser(account);
-    }
+  for (const account of DEMO_ACCOUNTS) {
+    ids[account.email] = await ensureAuthUser(account);
   }
 
-  // Always top up patients / appointments / labs as admin (anon-safe path).
   await seedClinicData(ids);
 
   return {
