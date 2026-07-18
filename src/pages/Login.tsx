@@ -3,13 +3,30 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Activity, LogIn, AlertCircle } from 'lucide-react';
 
+const DEMO_ACCOUNTS = [
+  { email: 'admin@clinic.com', role: 'Admin', label: 'Admin' },
+  { email: 'doctor@clinic.com', role: 'Doctor', label: 'Doctor' },
+  { email: 'nurse@clinic.com', role: 'Nurse', label: 'Nurse' },
+  { email: 'reception@clinic.com', role: 'Receptionist', label: 'Reception' },
+  { email: 'lab@clinic.com', role: 'Lab Staff', label: 'Lab' },
+  { email: 'patient@clinic.com', role: 'Patient', label: 'Patient' },
+] as const;
+
+const DEMO_PASSWORD = 'password';
+
 export const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@clinic.com');
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const fillDemo = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword(DEMO_PASSWORD);
+    setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +105,30 @@ export const Login = () => {
             </button>
           </form>
 
+          <div className="mt-5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <p className="text-xs font-semibold text-slate-700 mb-2">Demo login — click a role</p>
+            <div className="flex flex-wrap gap-2">
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.email}
+                  type="button"
+                  onClick={() => fillDemo(account.email)}
+                  disabled={loading}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-md border transition ${
+                    email === account.email
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white text-slate-700 border-slate-300 hover:border-emerald-400 hover:text-emerald-700'
+                  }`}
+                >
+                  {account.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Password for all roles: <span className="font-mono text-slate-700">{DEMO_PASSWORD}</span>
+            </p>
+          </div>
+
           <div className="mt-6 pt-6 border-t border-slate-200 space-y-3">
             <p className="text-center text-slate-600 text-sm">
               Don't have an account?{' '}
@@ -96,9 +137,9 @@ export const Login = () => {
               </Link>
             </p>
             <p className="text-center text-slate-600 text-sm">
-              First time setup?{' '}
+              Need to reseed demo data?{' '}
               <Link to="/setup" className="font-semibold text-teal-600 hover:text-teal-700">
-                Create test admin
+                Run demo setup
               </Link>
             </p>
           </div>

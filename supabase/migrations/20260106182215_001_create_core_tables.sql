@@ -116,6 +116,12 @@ CREATE POLICY "Admin can manage users"
   USING (EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'));
 
+-- Allow newly registered users to insert their own profile row
+CREATE POLICY "Users can create their own profile"
+  ON users FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "Patients can view own data"
   ON patients FOR SELECT
   TO authenticated

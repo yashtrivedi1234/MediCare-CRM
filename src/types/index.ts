@@ -67,16 +67,23 @@ export interface Specialization {
 
 export interface Appointment {
   id: string;
-  patient_id: string;
-  doctor_id: string;
-  scheduled_date: string;
-  scheduled_time: string;
-  appointment_type: 'opd' | 'ipd' | 'walk_in' | 'follow_up';
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled';
+  name?: string;
+  email?: string;
+  phone?: string;
+  service?: string;
+  date?: string;
+  time?: string;
+  notes?: string;
+  patient_id?: string;
+  doctor_id?: string;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  appointment_type?: 'opd' | 'ipd' | 'walk_in' | 'follow_up';
+  status: 'pending' | 'confirmed' | 'scheduled' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled';
   reason_for_visit?: string;
   token_number?: number;
   consultation_fee?: number;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface Prescription {
@@ -107,7 +114,7 @@ export interface LabOrder {
   id: string;
   patient_id: string;
   doctor_id?: string;
-  test_type_id: string;
+  test_name: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   urgency: 'routine' | 'urgent';
   order_date: string;

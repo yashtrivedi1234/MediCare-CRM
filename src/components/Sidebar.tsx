@@ -102,7 +102,7 @@ export const Sidebar = () => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed lg:static top-0 left-0 h-screen w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 lg:z-auto overflow-y-auto`}
+        } lg:translate-x-0 fixed lg:static top-0 left-0 h-screen w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 lg:z-auto overflow-y-auto`}
       >
         <div className="p-6 border-b border-slate-700">
           <div className="flex items-center gap-3 mb-2">

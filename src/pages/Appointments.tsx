@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import api from '../lib/api';
 import { Layout } from '../components/Layout';
 import { Appointment } from '../types';
-import { Calendar, Clock, User, Phone, Plus, X } from 'lucide-react';
+import { Calendar, Clock, User, Plus } from 'lucide-react';
 
 export const Appointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -16,13 +16,8 @@ export const Appointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .order('scheduled_date', { ascending: false });
-
-      if (error) throw error;
-      setAppointments(data || []);
+      const { data } = await api.get<{ appointments: Appointment[] }>('/appointments');
+      setAppointments(data.appointments || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -36,12 +31,20 @@ export const Appointments = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
+      pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
       scheduled: 'bg-blue-50 text-blue-700 border-blue-200',
       completed: 'bg-green-50 text-green-700 border-green-200',
       cancelled: 'bg-red-50 text-red-700 border-red-200',
       no_show: 'bg-yellow-50 text-yellow-700 border-yellow-200',
     };
     return colors[status] || colors.scheduled;
+  };
+
+  const formatDate = (value?: string) => {
+    if (!value) return '—';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
   };
 
   return (
@@ -63,7 +66,7 @@ export const Appointments = () => {
 
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
-            {['all', 'scheduled', 'completed', 'cancelled'].map((status) => (
+            {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
@@ -88,7 +91,9 @@ export const Appointments = () => {
                 <div key={apt.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-lg transition">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="font-semibold text-slate-900 text-sm">OPD Consultation</p>
+                      <p className="font-semibold text-slate-900 text-sm">
+                        {apt.service || 'Consultation'}
+                      </p>
                       <p className="text-xs text-slate-500">ID: {apt.id.slice(0, 8)}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full border font-medium ${getStatusColor(apt.status)}`}>
@@ -99,20 +104,18 @@ export const Appointments = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-slate-700">
                       <User className="w-4 h-4 text-slate-400" />
-                      <span>Dr. John Doe</span>
+                      <span>{apt.name || 'Unknown patient'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-700">
                       <Calendar className="w-4 h-4 text-slate-400" />
-                      <span>{apt.scheduled_date}</span>
+                      <span>{formatDate(apt.date || apt.scheduled_date)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-700">
                       <Clock className="w-4 h-4 text-slate-400" />
-                      <span>{apt.scheduled_time}</span>
+                      <span>{apt.time || apt.scheduled_time || '—'}</span>
                     </div>
-                    {apt.token_number && (
-                      <div className="bg-emerald-50 rounded p-2 font-semibold text-emerald-700">
-                        Token #{apt.token_number}
-                      </div>
+                    {apt.notes && (
+                      <p className="text-xs text-slate-500 line-clamp-2">{apt.notes}</p>
                     )}
                   </div>
 
@@ -142,15 +145,6 @@ interface AppointmentFormProps {
 }
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    patientId: '',
-    doctorId: '',
-    date: '',
-    time: '',
-    type: 'opd',
-    reason: '',
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     onClose();

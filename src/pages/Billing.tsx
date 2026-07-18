@@ -55,7 +55,14 @@ export const Billing = () => {
   );
 };
 
-const StatCard = ({ title, value, icon: Icon, color }: any) => {
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: 'green' | 'yellow' | 'blue' | 'emerald';
+}
+
+const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => {
   const colorClasses: Record<string, string> = {
     green: 'from-green-50 to-green-100',
     yellow: 'from-yellow-50 to-yellow-100',

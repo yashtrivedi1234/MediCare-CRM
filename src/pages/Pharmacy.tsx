@@ -55,7 +55,14 @@ export const Pharmacy = () => {
   );
 };
 
-const StatCard = ({ title, value, icon: Icon, color }: any) => {
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: 'blue' | 'yellow' | 'red' | 'green';
+}
+
+const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => {
   const colorClasses: Record<string, string> = {
     blue: 'from-blue-50 to-blue-100',
     yellow: 'from-yellow-50 to-yellow-100',

@@ -1,0 +1,29 @@
+MediCare CRM — Demo Client Credentials
+======================================
+
+All demo accounts use password: password
+
+Role            Email
+-------------   ---------------------
+Admin           admin@clinic.com
+Doctor          doctor@clinic.com
+Nurse           nurse@clinic.com
+Receptionist    reception@clinic.com
+Lab Staff       lab@clinic.com
+Patient         patient@clinic.com
+
+Quick start
+-----------
+1. Ensure MongoDB is running
+2. From project root: npm run dev
+   (starts API on :4000 and Vite on :5173)
+3. Open http://localhost:5173/login
+4. Click a role chip (Admin / Doctor / …) and Sign In
+
+Optional: open /setup and click "Prepare Demo Accounts"
+to top up users + sample patients / appointments / labs.
+
+Sample data includes:
+- 6 patients (MRN-001 … MRN-006)
+- Appointments around today
+- Lab orders in pending / in_progress / completed

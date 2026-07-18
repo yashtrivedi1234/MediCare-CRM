@@ -1,5 +1,5 @@
 import { Layout } from '../components/Layout';
-import { ClipboardList, Plus, FileText } from 'lucide-react';
+import { ClipboardList, Plus } from 'lucide-react';
 
 export const MedicalRecords = () => {
   return (

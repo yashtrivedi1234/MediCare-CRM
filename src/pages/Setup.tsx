@@ -1,38 +1,47 @@
 import { useState } from 'react';
 import { Activity, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import axios from 'axios';
+import api from '../lib/api';
+
+type DemoAccount = {
+  email: string;
+  password: string;
+  full_name: string;
+  role: string;
+};
 
 export const Setup = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [accounts, setAccounts] = useState<DemoAccount[]>([]);
 
   const seedTestUsers = async () => {
     setLoading(true);
     setStatus('loading');
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/seed-users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const { data } = await api.post<{
+        email: string;
+        password: string;
+        message: string;
+        accounts?: DemoAccount[];
+      }>('/auth/setup');
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus('success');
-        setMessage(
-          `✓ Test user created successfully!\n\nEmail: ${data.email}\nPassword: ${data.password}\n\nYou can now log in with these credentials.`
-        );
-      } else {
-        setStatus('error');
-        setMessage(data.error || 'Failed to create test user');
-      }
+      setStatus('success');
+      setAccounts(data.accounts || []);
+      setMessage(data.message);
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'An error occurred');
+      if (axios.isAxiosError(error) && !error.response) {
+        setMessage(
+          'Cannot reach the API server. Start the backend with `cd server && npm run dev` and ensure MongoDB is running.'
+        );
+      } else if (axios.isAxiosError(error)) {
+        setMessage(error.response?.data?.message || 'Failed to create demo accounts');
+      } else {
+        setMessage(error instanceof Error ? error.message : 'An error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,7 +49,7 @@ export const Setup = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="flex items-center justify-center mb-8">
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-lg">
@@ -49,22 +58,47 @@ export const Setup = () => {
             <h1 className="ml-3 text-2xl font-bold text-slate-900">MediCare</h1>
           </div>
 
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Initial Setup</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Demo Client Setup</h2>
           <p className="text-slate-600 text-sm mb-6">
-            Let's set up your clinic management system
+            Creates ready-to-use role accounts and sample clinic data for demos.
           </p>
 
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
-                To get started, we'll create a test admin account for you. You can then log in and create additional staff accounts.
+                One click seeds Admin, Doctor, Nurse, Reception, Lab, and Patient logins,
+                plus patients, appointments, and lab orders.
               </p>
             </div>
 
             {status === 'success' && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex gap-3">
                 <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                <div className="text-sm text-green-700 whitespace-pre-line">{message}</div>
+                <div className="text-sm text-green-700 space-y-3 w-full">
+                  <p>{message}</p>
+                  {accounts.length > 0 && (
+                    <div className="overflow-hidden rounded-lg border border-green-200 bg-white">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-green-50 text-green-800">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">Role</th>
+                            <th className="px-3 py-2 font-semibold">Email</th>
+                            <th className="px-3 py-2 font-semibold">Password</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {accounts.map((account) => (
+                            <tr key={account.email} className="border-t border-green-100 text-slate-700">
+                              <td className="px-3 py-2 capitalize">{account.role.replace('_', ' ')}</td>
+                              <td className="px-3 py-2 font-mono">{account.email}</td>
+                              <td className="px-3 py-2 font-mono">{account.password}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -80,15 +114,15 @@ export const Setup = () => {
                 <div className="bg-slate-50 p-4 rounded-lg space-y-3 text-sm">
                   <div className="flex gap-2">
                     <span className="text-emerald-600 font-bold">1.</span>
-                    <span className="text-slate-700">Click "Create Test Admin" below</span>
+                    <span className="text-slate-700">Click &quot;Prepare Demo Accounts&quot; below</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="text-emerald-600 font-bold">2.</span>
-                    <span className="text-slate-700">Use the provided credentials to login</span>
+                    <span className="text-slate-700">Copy any role email — password is always <code>password</code></span>
                   </div>
                   <div className="flex gap-2">
                     <span className="text-emerald-600 font-bold">3.</span>
-                    <span className="text-slate-700">Create additional staff accounts as needed</span>
+                    <span className="text-slate-700">Open Login and explore Patients / Appointments / Lab</span>
                   </div>
                 </div>
 
@@ -100,12 +134,12 @@ export const Setup = () => {
                   {loading ? (
                     <>
                       <Loader className="w-5 h-5 animate-spin" />
-                      Creating test admin...
+                      Preparing demo...
                     </>
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      Create Test Admin Account
+                      Prepare Demo Accounts
                     </>
                   )}
                 </button>
@@ -128,10 +162,10 @@ export const Setup = () => {
                 What will be created?
               </summary>
               <div className="mt-3 text-xs space-y-2 text-slate-600">
-                <p>• Admin user account with full system access</p>
-                <p>• Permission to create other staff members</p>
-                <p>• Access to all features and modules</p>
-                <p>• Test data seeded into the system</p>
+                <p>• 6 demo users (admin, doctor, nurse, receptionist, lab, patient)</p>
+                <p>• 6 sample patients with MRNs</p>
+                <p>• Today / upcoming appointments for the demo doctor</p>
+                <p>• Lab orders in pending, in-progress, and completed states</p>
               </div>
             </details>
           </div>

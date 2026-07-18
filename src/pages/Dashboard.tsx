@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { Layout } from '../components/Layout';
-import { Users, Calendar, TrendingUp, DollarSign, Activity, Stethoscope } from 'lucide-react';
+import { Users, Calendar, DollarSign, Activity, Stethoscope } from 'lucide-react';
 
 export const Dashboard = () => {
   const { user } = useAuth();

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import api from '../lib/api';
 import { Layout } from '../components/Layout';
+import { LabOrder } from '../types';
 import { TestTube, Plus, Filter, Download } from 'lucide-react';
 
 export const Lab = () => {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<LabOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -13,9 +14,8 @@ export const Lab = () => {
 
   const fetchLabOrders = async () => {
     try {
-      const { data, error } = await supabase.from('lab_orders').select('*');
-      if (error) throw error;
-      setOrders(data || []);
+      const { data } = await api.get<{ labOrders: LabOrder[] }>('/lab-orders');
+      setOrders(data.labOrders || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -49,10 +49,37 @@ export const Lab = () => {
             </button>
           </div>
 
-          <div className="text-center py-12 text-slate-500">
-            <TestTube className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Lab orders will appear here</p>
-          </div>
+          {loading ? (
+            <div className="text-center py-12 text-slate-500">Loading lab orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <TestTube className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Lab orders will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between border border-slate-200 rounded-lg p-4">
+                  <div>
+                    <p className="font-medium text-slate-900">{order.test_name}</p>
+                    <p className="text-sm text-slate-500">
+                      Order #{order.id.slice(0, 8)} · {order.order_date}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {order.urgency === 'urgent' && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-red-50 text-red-700 font-medium">
+                        Urgent
+                      </span>
+                    )}
+                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

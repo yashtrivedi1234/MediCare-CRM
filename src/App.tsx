@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
 import { Appointments } from './pages/Appointments';
 import { Doctors } from './pages/Doctors';
+import { Departments } from './pages/Departments';
 import { Lab } from './pages/Lab';
 import { Pharmacy } from './pages/Pharmacy';
 import { Billing } from './pages/Billing';
@@ -165,7 +166,7 @@ function App() {
             path="/departments"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <Doctors />
+                <Departments />
               </ProtectedRoute>
             }
           />
