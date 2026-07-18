@@ -26,7 +26,7 @@ export const Setup = () => {
         password: string;
         message: string;
         accounts?: DemoAccount[];
-      }>('/auth/setup');
+      }>('auth/setup');
 
       setStatus('success');
       setAccounts(data.accounts || []);
@@ -35,10 +35,17 @@ export const Setup = () => {
       setStatus('error');
       if (axios.isAxiosError(error) && !error.response) {
         setMessage(
-          'Cannot reach the API server. Start the backend with `cd server && npm run dev` and ensure MongoDB is running.'
+          'Cannot reach the API server. Keep `npm run dev` running (API on :4000) and ensure MongoDB is up.'
         );
       } else if (axios.isAxiosError(error)) {
-        setMessage(error.response?.data?.message || 'Failed to create demo accounts');
+        const status = error.response?.status;
+        const url = error.config?.baseURL
+          ? `${error.config.baseURL}/${(error.config.url || '').replace(/^\//, '')}`
+          : error.config?.url;
+        setMessage(
+          error.response?.data?.message ||
+            `Setup failed (${status || 'error'})${url ? ` at ${url}` : ''}`
+        );
       } else {
         setMessage(error instanceof Error ? error.message : 'An error occurred');
       }
