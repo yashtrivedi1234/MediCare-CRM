@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
 import { Layout } from '../components/Layout';
 import { Appointment } from '../types';
 import { Calendar, Clock, User, Plus } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+type AppointmentRow = Appointment & {
+  patients?: { first_name?: string; last_name?: string } | null;
+};
 
 export const Appointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -16,8 +20,22 @@ export const Appointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const { data } = await api.get<{ appointments: Appointment[] }>('/appointments');
-      setAppointments(data.appointments || []);
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*, patients(first_name, last_name)')
+        .order('scheduled_date', { ascending: true });
+      if (error) throw error;
+
+      const rows = ((data as AppointmentRow[]) || []).map((row) => ({
+        ...row,
+        name: row.patients
+          ? `${row.patients.first_name || ''} ${row.patients.last_name || ''}`.trim()
+          : row.name,
+        service: row.reason_for_visit || row.service || 'Consultation',
+        date: row.scheduled_date,
+        time: row.scheduled_time,
+      }));
+      setAppointments(rows);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {

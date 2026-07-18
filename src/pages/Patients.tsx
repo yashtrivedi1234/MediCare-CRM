@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
 import { Layout } from '../components/Layout';
 import { Patient } from '../types';
 import { Search, Plus, Eye, Edit2, Trash2, Phone, Mail } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -16,8 +16,12 @@ export const Patients = () => {
 
   const fetchPatients = async () => {
     try {
-      const { data } = await api.get<{ patients: Patient[] }>('/patients');
-      setPatients(data.patients || []);
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setPatients((data as Patient[]) || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
     } finally {

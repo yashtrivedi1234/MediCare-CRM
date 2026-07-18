@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
 import { Layout } from '../components/Layout';
 import { LabOrder } from '../types';
 import { TestTube, Plus, Filter, Download } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+type LabOrderRow = Omit<LabOrder, 'test_name' | 'order_date'> & {
+  order_date?: string;
+  lab_test_types?: { name?: string } | null;
+};
 
 export const Lab = () => {
   const [orders, setOrders] = useState<LabOrder[]>([]);
@@ -14,8 +19,23 @@ export const Lab = () => {
 
   const fetchLabOrders = async () => {
     try {
-      const { data } = await api.get<{ labOrders: LabOrder[] }>('/lab-orders');
-      setOrders(data.labOrders || []);
+      const { data, error } = await supabase
+        .from('lab_orders')
+        .select('id, patient_id, doctor_id, status, urgency, order_date, specimen_collected_at, lab_test_types(name)')
+        .order('order_date', { ascending: false });
+      if (error) throw error;
+
+      const rows: LabOrder[] = ((data as LabOrderRow[]) || []).map((row) => ({
+        id: row.id,
+        patient_id: row.patient_id,
+        doctor_id: row.doctor_id,
+        test_name: row.lab_test_types?.name || 'Lab test',
+        status: row.status,
+        urgency: row.urgency,
+        order_date: row.order_date ? String(row.order_date).slice(0, 10) : '',
+        specimen_collected_at: row.specimen_collected_at,
+      }));
+      setOrders(rows);
     } catch (error) {
       console.error('Error:', error);
     } finally {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Activity, AlertCircle, CheckCircle, Loader } from 'lucide-react';
-import axios from 'axios';
-import api from '../lib/api';
+import { runDemoSeed, DEMO_ACCOUNTS, DEMO_PASSWORD } from '../lib/demoSeed';
+import { hasSupabaseConfig } from '../lib/supabase';
 
 type DemoAccount = {
   email: string;
@@ -21,34 +21,19 @@ export const Setup = () => {
     setStatus('loading');
 
     try {
-      const { data } = await api.post<{
-        email: string;
-        password: string;
-        message: string;
-        accounts?: DemoAccount[];
-      }>('auth/setup');
+      if (!hasSupabaseConfig) {
+        throw new Error(
+          'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env (and Vercel env), then redeploy.'
+        );
+      }
 
+      const data = await runDemoSeed();
       setStatus('success');
-      setAccounts(data.accounts || []);
+      setAccounts(data.accounts);
       setMessage(data.message);
     } catch (error) {
       setStatus('error');
-      if (axios.isAxiosError(error) && !error.response) {
-        setMessage(
-          'Cannot reach the API server. Keep `npm run dev` running (API on :4000) and ensure MongoDB is up.'
-        );
-      } else if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const url = error.config?.baseURL
-          ? `${error.config.baseURL}/${(error.config.url || '').replace(/^\//, '')}`
-          : error.config?.url;
-        setMessage(
-          error.response?.data?.message ||
-            `Setup failed (${status || 'error'})${url ? ` at ${url}` : ''}`
-        );
-      } else {
-        setMessage(error instanceof Error ? error.message : 'An error occurred');
-      }
+      setMessage(error instanceof Error ? error.message : 'Setup failed');
     } finally {
       setLoading(false);
     }
@@ -67,14 +52,21 @@ export const Setup = () => {
 
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Demo Client Setup</h2>
           <p className="text-slate-600 text-sm mb-6">
-            Creates ready-to-use role accounts and sample clinic data for demos.
+            Seeds Supabase Auth users + sample patients, appointments, and lab orders.
           </p>
 
           <div className="space-y-4">
+            {!hasSupabaseConfig && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                Supabase keys missing. Put them in <code>.env</code> and in Vercel → Settings →
+                Environment Variables, then redeploy.
+              </div>
+            )}
+
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
-                One click seeds Admin, Doctor, Nurse, Reception, Lab, and Patient logins,
-                plus patients, appointments, and lab orders.
+                Password for every demo role is <code className="font-mono">{DEMO_PASSWORD}</code>.
+                Turn <strong>off</strong> &quot;Confirm email&quot; in Supabase Auth for one-click seeding.
               </p>
             </div>
 
@@ -112,30 +104,24 @@ export const Setup = () => {
             {status === 'error' && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
                 <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                <div className="text-sm text-red-700">{message}</div>
+                <div className="text-sm text-red-700 whitespace-pre-wrap">{message}</div>
               </div>
             )}
 
-            {status === 'idle' && (
+            {status !== 'success' && (
               <>
-                <div className="bg-slate-50 p-4 rounded-lg space-y-3 text-sm">
-                  <div className="flex gap-2">
-                    <span className="text-emerald-600 font-bold">1.</span>
-                    <span className="text-slate-700">Click &quot;Prepare Demo Accounts&quot; below</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-emerald-600 font-bold">2.</span>
-                    <span className="text-slate-700">Copy any role email — password is always <code>password</code></span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-emerald-600 font-bold">3.</span>
-                    <span className="text-slate-700">Open Login and explore Patients / Appointments / Lab</span>
-                  </div>
+                <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm text-slate-700">
+                  {DEMO_ACCOUNTS.map((a) => (
+                    <div key={a.email} className="flex justify-between gap-2">
+                      <span className="capitalize">{a.role.replace('_', ' ')}</span>
+                      <span className="font-mono text-xs">{a.email}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <button
                   onClick={seedTestUsers}
-                  disabled={loading}
+                  disabled={loading || !hasSupabaseConfig}
                   className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
                 >
                   {loading ? (
@@ -161,20 +147,6 @@ export const Setup = () => {
                 Go to Login
               </a>
             )}
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-slate-200">
-            <details className="text-sm text-slate-600">
-              <summary className="cursor-pointer font-semibold hover:text-slate-900">
-                What will be created?
-              </summary>
-              <div className="mt-3 text-xs space-y-2 text-slate-600">
-                <p>• 6 demo users (admin, doctor, nurse, receptionist, lab, patient)</p>
-                <p>• 6 sample patients with MRNs</p>
-                <p>• Today / upcoming appointments for the demo doctor</p>
-                <p>• Lab orders in pending, in-progress, and completed states</p>
-              </div>
-            </details>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-MediCare CRM — Demo Client Credentials
-======================================
+MediCare CRM — Demo (Supabase + Vercel)
+=======================================
 
 All demo accounts use password: password
 
@@ -12,18 +12,23 @@ Receptionist    reception@clinic.com
 Lab Staff       lab@clinic.com
 Patient         patient@clinic.com
 
-Quick start
------------
-1. Ensure MongoDB is running
-2. From project root: npm run dev
-   (starts API on :4000 and Vite on :5173)
-3. Open http://localhost:5173/login
-4. Click a role chip (Admin / Doctor / …) and Sign In
+Local
+-----
+1. Copy .env.example → .env and paste your Supabase URL + anon key
+2. In Supabase Dashboard → Authentication → Providers → Email:
+   turn OFF "Confirm email" (needed for one-click demo seed)
+3. Run SQL migrations in supabase/migrations (SQL Editor or `supabase db push`)
+4. npm install && npm run dev
+5. Open http://localhost:5173/setup → Prepare Demo Accounts
+6. Login with any role above
 
-Optional: open /setup and click "Prepare Demo Accounts"
-to top up users + sample patients / appointments / labs.
+Vercel
+------
+1. Project Settings → Environment Variables:
+   VITE_SUPABASE_URL = (same as .env)
+   VITE_SUPABASE_ANON_KEY = (same as .env)
+2. Redeploy
+3. Open https://YOUR_APP.vercel.app/setup → Prepare Demo Accounts
+4. Login
 
-Sample data includes:
-- 6 patients (MRN-001 … MRN-006)
-- Appointments around today
-- Lab orders in pending / in_progress / completed
+Do NOT set VITE_API_URL on Vercel — the app uses Supabase directly.
